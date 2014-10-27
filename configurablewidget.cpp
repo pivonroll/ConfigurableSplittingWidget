@@ -4,13 +4,21 @@
 #include <QVBoxLayout>
 #include <QSplitter>
 #include <QSplitterHandle>
+#include <QStyleOption>
+#include <QPainter>
 
 #include "common.h"
 
 ConfigurableWidget::ConfigurableWidget(QWidget *parent) :
     QWidget(parent),
-    m_splitter(0)
-{  
+    m_splitter(0),
+    m_mode(Edit)
+{
+    setObjectName("ConfigurableWidget");
+
+    m_normalPalette = palette();
+    updateWidgetMode();
+
     setContextMenuPolicy(Qt::CustomContextMenu);
     m_contextMenu = new QMenu(this);
 
@@ -25,9 +33,41 @@ ConfigurableWidget::ConfigurableWidget(QWidget *parent) :
     connect(this, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showContextMenuEvent(const QPoint&)));
 }
 
+void ConfigurableWidget::setMode(ConfigurableWidget::Mode mode)
+{
+    m_mode = mode;
+    updateWidgetMode();
+}
+
 void ConfigurableWidget::showContextMenuEvent(const QPoint &point)
 {
     m_contextMenu->exec(mapToGlobal(point));
+}
+
+void ConfigurableWidget::paintEvent(QPaintEvent *)
+{
+    QStyleOption opt;
+    opt.init(this);
+    QPainter p(this);
+    style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
+}
+
+void ConfigurableWidget::updateWidgetMode()
+{
+    switch (m_mode) {
+    case Normal:
+    {
+        setPalette(m_normalPalette);
+        update();
+    }
+        break;
+    case Edit:
+    {
+        loadStyleSheetForWidget(*this, ":/stylesheets/config_widget_stylesheet.qss");
+    }
+    default:
+        break;
+    }
 }
 
 void ConfigurableWidget::splitHorizontal()
